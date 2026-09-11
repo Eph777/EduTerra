@@ -164,41 +164,7 @@ def toggle_mod(mod_name, mods_dir, world_mt_path):
         for m in mods_in_package:
             enable_mod_in_world(world_mt_path, m)
             
-        # Check for missing dependencies (only when enabling)
-        local_mod_names = set(mods_in_package) if is_modpack else {mod_name}
-        all_deps = set()
-        
-        if is_modpack:
-            for entry in os.listdir(target_dir):
-                subdir = os.path.join(target_dir, entry)
-                if os.path.isdir(subdir):
-                    if os.path.exists(os.path.join(subdir, "mod.conf")) or os.path.exists(os.path.join(subdir, "init.lua")):
-                        all_deps.update(get_local_dependencies(subdir))
-        else:
-            all_deps.update(get_local_dependencies(target_dir))
-            
-        missing_deps = set()
-        for dep in all_deps:
-            if dep in IGNORED_MODS or dep in local_mod_names:
-                continue
-                
-            installed = False
-            if os.path.exists(os.path.join(mods_dir, dep)):
-                installed = True
-            else:
-                for d in os.listdir(mods_dir):
-                    parent_dir = os.path.join(mods_dir, d)
-                    if os.path.isdir(parent_dir):
-                        submods, _ = get_installed_mods(parent_dir)
-                        if dep in submods:
-                            installed = True
-                            break
-            if not installed:
-                missing_deps.add(dep)
-                
-        if missing_deps:
-            print(f"\nWARNING: Mod '{mod_name}' depends on the following missing mod(s): {', '.join(sorted(missing_deps))}")
-            print("Please ensure they are installed before starting the server.")
+        resolve_dependencies_for_local_mods(mods_in_package, target_dir, mods_dir, world_mt_path)
 
 def get_mod_name_from_conf(conf_path):
     if not os.path.exists(conf_path):
@@ -547,42 +513,7 @@ def enable_only(mod_name, mods_dir, world_mt_path):
     for m in mods_to_enable:
         enable_mod_in_world(world_mt_path, m)
         
-    # Check for missing dependencies
-    local_mod_names = set(mods_to_enable) if is_modpack else {mod_name}
-    all_deps = set()
-    
-    if is_modpack:
-        for entry in os.listdir(target_dir):
-            subdir = os.path.join(target_dir, entry)
-            if os.path.isdir(subdir):
-                if os.path.exists(os.path.join(subdir, "mod.conf")) or os.path.exists(os.path.join(subdir, "init.lua")):
-                    all_deps.update(get_local_dependencies(subdir))
-    else:
-        all_deps.update(get_local_dependencies(target_dir))
-        
-    missing_deps = set()
-    for dep in all_deps:
-        if dep in IGNORED_MODS or dep in local_mod_names:
-            continue
-            
-        # Check if installed
-        installed = False
-        if os.path.exists(os.path.join(mods_dir, dep)):
-            installed = True
-        else:
-            for d in os.listdir(mods_dir):
-                parent_dir = os.path.join(mods_dir, d)
-                if os.path.isdir(parent_dir):
-                    submods, _ = get_installed_mods(parent_dir)
-                    if dep in submods:
-                        installed = True
-                        break
-        if not installed:
-            missing_deps.add(dep)
-            
-    if missing_deps:
-        print(f"\nWARNING: Mod '{mod_name}' depends on the following missing mod(s): {', '.join(sorted(missing_deps))}")
-        print("Please ensure they are installed before starting the server.")
+    resolve_dependencies_for_local_mods(mods_to_enable, target_dir, mods_dir, world_mt_path)
 
 def main():
     parser = argparse.ArgumentParser(description="Recursively install Luanti mods and dependencies from ContentDB or local zip.")
