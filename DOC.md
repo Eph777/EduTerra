@@ -29,8 +29,8 @@ A comprehensive system for tracking and storing player positions from a Luanti (
 sudo bash
 cd /root 
 
-git clone https://github.com/Eph777/luanti-qgis.git
-cd luanti-qgis
+git clone https://github.com/Eph777/EduTerra.git
+cd EduTerra
 
 # Run unified deployment (interactive)
 ./bin/deploy.sh

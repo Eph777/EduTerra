@@ -27,8 +27,8 @@ sudo bash
 
 # 2. Download the project
 cd /root
-git clone https://github.com/Eph777/luanti-qgis.git
-cd luanti-qgis
+git clone https://github.com/Eph777/EduTerra.git
+cd EduTerra
 
 # 3. Deploy everything (installs database, server, renderer…)
 ./bin/deploy.sh            # interactive — asks before each step
@@ -116,4 +116,4 @@ tar -czf world.tar.gz ~/snap/luanti/common/.minetest/worlds/myworld
 ## Contact
 
 Ephraim BOURIAHI — amar-ephraim.bouriahi@etu.u-pec.fr  
-GitHub: [https://github.com/Eph777/luanti-qgis](https://github.com/Eph777/luanti-qgis)
+GitHub: [https://github.com/Eph777/EduTerra.git](https://github.com/Eph777/EduTerra)
