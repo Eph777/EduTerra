@@ -362,7 +362,7 @@ if [[ "$INTERACTIVE" == true ]]; then
         TEMP_ZIP=""
 
         if [[ "$CHOICE" -eq 0 ]]; then
-            echo "Please provide the ContentDB URL or package ID (author/name):"
+            echo "Please provide a ContentDB package ID/URL or GitHub repository URL:"
             read -p "URL or ID ==> " -r MOD_INPUT
             
             if [[ -z "$MOD_INPUT" ]]; then

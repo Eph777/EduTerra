@@ -50,6 +50,58 @@ def parse_package_id(input_str):
         
     return None
 
+def is_github_url(input_str):
+    parsed = urllib.parse.urlparse(input_str)
+    return parsed.scheme in {"http", "https"} and parsed.netloc.lower() in {"github.com", "www.github.com"}
+
+def get_github_archive_url(github_url):
+    parsed = urllib.parse.urlparse(github_url)
+    path_parts = [part for part in parsed.path.split('/') if part]
+    if len(path_parts) < 2:
+        return None
+
+    owner, repository = path_parts[:2]
+    repository = repository.removesuffix('.git')
+    if not owner or not repository:
+        return None
+
+    # Preserve explicit archive URLs and branch links supplied by the user.
+    if len(path_parts) >= 4 and path_parts[2] == 'archive':
+        return github_url
+    if len(path_parts) >= 4 and path_parts[2] == 'tree':
+        branch = '/'.join(path_parts[3:])
+        return f"https://codeload.github.com/{owner}/{repository}/zip/refs/heads/{urllib.parse.quote(branch, safe='')}"
+
+    repository_info = fetch_json(f"https://api.github.com/repos/{owner}/{repository}")
+    if not repository_info:
+        return None
+    default_branch = repository_info.get('default_branch')
+    if not default_branch:
+        return None
+    return f"https://codeload.github.com/{owner}/{repository}/zip/refs/heads/{urllib.parse.quote(default_branch, safe='')}"
+
+def install_github_repository(github_url, mods_dir, world_mt_path):
+    archive_url = get_github_archive_url(github_url)
+    if not archive_url:
+        print(f"Error: Could not determine a downloadable archive for GitHub URL '{github_url}'")
+        return None
+
+    with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
+        temp_zip_path = temp_zip.name
+
+    try:
+        print(f"Downloading GitHub repository from {archive_url}...")
+        req = urllib.request.Request(archive_url, headers=HEADERS)
+        with urllib.request.urlopen(req) as response, open(temp_zip_path, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+        return install_local_zip(temp_zip_path, mods_dir, world_mt_path)
+    except (urllib.error.URLError, zipfile.BadZipFile) as error:
+        print(f"Error: Failed to download or read GitHub repository: {error}")
+        return None
+    finally:
+        if os.path.exists(temp_zip_path):
+            os.remove(temp_zip_path)
+
 def get_package_info(package_id):
     url = f"https://content.minetest.net/api/packages/{package_id}/"
     return fetch_json(url)
@@ -547,6 +599,11 @@ def main():
     if not args.input:
         parser.error("the following arguments are required: input (unless --enable-only, --toggle, or --check-status is specified)")
         
+    if is_github_url(args.input):
+        install_github_repository(args.input, args.mods_dir, args.world_mt)
+        print("\nGitHub mod installation and dependency resolution complete!")
+        sys.exit(0)
+
     # Check if input is a local ZIP file
     if os.path.isfile(args.input) and (args.input.endswith(".zip") or zipfile.is_zipfile(args.input)):
         install_local_zip(args.input, args.mods_dir, args.world_mt)
@@ -555,7 +612,7 @@ def main():
         
     package_id = parse_package_id(args.input)
     if not package_id:
-        print("Error: Input must be a valid ContentDB URL, 'author/name', or a path to a local zip file.", file=sys.stderr)
+        print("Error: Input must be a valid ContentDB URL, GitHub repository URL, 'author/name', or a path to a local zip file.", file=sys.stderr)
         sys.exit(1)
         
     print(f"Target Mod ID detected: {package_id}")
