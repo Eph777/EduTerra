@@ -49,3 +49,6 @@ backup_*.sql
 
 # World data
 worlds_data/
+
+# TLS certificates
+certs/
