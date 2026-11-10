@@ -77,3 +77,4 @@ BEGIN
     RETURN 'Created view: ' || view_name;
 END;
 $$ LANGUAGE plpgsql;
+---fqfqzfqizhfqzfq
